@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Solution</title>
+
+  <!-- CodeMirror -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/rust/rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/autorefresh.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:          #ffffff;
+      --bg2:         #f7f7f8;
+      --bg3:         #f0f0f2;
+      --text:        #111111;
+      --text2:       #555555;
+      --text3:       #999999;
+      --border:      rgba(0,0,0,0.08);
+      --border2:     rgba(0,0,0,0.14);
+      --accent:      #6366f1;
+      --accent-h:    #4f46e5;
+      --accent-lt:   #ede9fe;
+      --accent-tx:   #4338ca;
+      --easy:        #059669;
+      --medium:      #d97706;
+      --hard:        #dc2626;
+      --code-bg:     #1e1e2e;
+      --code-hdr:    #181825;
+      --code-border: rgba(255,255,255,0.07);
+    }
+
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ── Top bar ───────────────────────────────────── */
+    .topbar {
+      height: 52px; flex-shrink: 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; color: var(--text2);
+      cursor: pointer; padding: 5px 10px;
+      border-radius: 7px; border: 1px solid var(--border2);
+      background: transparent;
+    }
+    .back-btn:hover { background: var(--bg2); color: var(--text); }
+    .topbar-title {
+      font-size: 15px; font-weight: 600; color: var(--text);
+      flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .diff-pill {
+      font-size: 11px; font-weight: 700; padding: 3px 10px;
+      border-radius: 999px; border: 1px solid;
+    }
+    .diff-pill.easy   { color: var(--easy);   border-color: rgba(5,150,105,0.3);  background: rgba(5,150,105,0.08);  }
+    .diff-pill.medium { color: var(--medium); border-color: rgba(217,119,6,0.3);  background: rgba(217,119,6,0.08);  }
+    .diff-pill.hard   { color: var(--hard);   border-color: rgba(220,38,38,0.3);  background: rgba(220,38,38,0.08);  }
+    .lc-link {
+      font-size: 12px; color: var(--accent); text-decoration: none;
+      border: 1px solid rgba(99,102,241,0.3); border-radius: 6px;
+      padding: 4px 10px;
+    }
+    .lc-link:hover { background: var(--accent-lt); }
+
+    /* ── Solution tabs (brute → optimal) ──────────── */
+    .sol-tab-bar {
+      height: 40px; flex-shrink: 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-end;
+      padding: 0 18px; gap: 4px;
+    }
+    .sol-tab {
+      font-size: 12px; font-weight: 500;
+      padding: 6px 14px 7px; border-radius: 6px 6px 0 0;
+      cursor: pointer; color: var(--text2);
+      border: 1px solid transparent; border-bottom: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sol-tab:hover { color: var(--text); background: var(--bg2); }
+    .sol-tab.active { color: var(--accent-tx); background: var(--bg); border-color: var(--border); border-bottom-color: var(--bg); }
+    .sol-tab-add {
+      font-size: 12px; color: var(--accent);
+      padding: 6px 10px; cursor: pointer; align-self: center;
+      border-radius: 6px; margin-left: 4px;
+    }
+    .sol-tab-add:hover { background: var(--accent-lt); }
+
+    /* ── Main split pane ───────────────────────────── */
+    .split {
+      flex: 1; display: flex; min-height: 0;
+    }
+
+    /* LEFT — code pane */
+    .pane-code {
+      width: 50%; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      background: var(--code-bg);
+      border-right: 1px solid var(--code-border);
+      min-width: 0;
+    }
+    .pane-code-hdr {
+      height: 40px; flex-shrink: 0;
+      background: var(--code-hdr);
+      border-bottom: 1px solid var(--code-border);
+      display: flex; align-items: center;
+      padding: 0 14px; gap: 10px;
+    }
+    .lang-tabs { display: flex; gap: 2px; flex: 1; }
+    .lang-tab {
+      font-size: 12px; padding: 4px 12px;
+      border-radius: 5px; cursor: pointer;
+      color: #6c7086;
+    }
+    .lang-tab:hover { color: #cdd6f4; background: rgba(255,255,255,0.05); }
+    .lang-tab.active { color: #cdd6f4; background: rgba(255,255,255,0.1); }
+    .copy-btn {
+      font-size: 11px; padding: 4px 10px;
+      border-radius: 5px; border: 1px solid rgba(255,255,255,0.1);
+      background: transparent; color: #6c7086; cursor: pointer;
+      margin-left: auto;
+    }
+    .copy-btn:hover { color: #cdd6f4; }
+    .cm-wrap { flex: 1; overflow: hidden; min-height: 0; }
+    .cm-wrap .CodeMirror {
+      height: 100%; font-size: 13.5px; line-height: 1.65;
+      font-family: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace;
+      background: var(--code-bg);
+    }
+
+    /* resize handle */
+    .resize-handle {
+      width: 5px; flex-shrink: 0; cursor: col-resize;
+      background: var(--code-border);
+      transition: background 0.15s;
+      z-index: 10;
+    }
+    .resize-handle:hover, .resize-handle.dragging { background: var(--accent); }
+
+    /* RIGHT — explanation pane */
+    .pane-exp {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column;
+      background: var(--bg);
+    }
+    .pane-exp-hdr {
+      height: 40px; flex-shrink: 0;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 18px; gap: 8px;
+    }
+    .pane-exp-hdr-title { font-size: 12px; font-weight: 600; color: var(--text2); flex: 1; }
+    .edit-toggle {
+      font-size: 11px; padding: 4px 10px; border-radius: 6px;
+      border: 1px solid var(--border2); background: var(--bg);
+      cursor: pointer; color: var(--text2);
+    }
+    .edit-toggle:hover { background: var(--bg3); }
+    .edit-toggle.active { background: var(--accent); color: #fff; border-color: transparent; }
+    .save-exp-btn {
+      font-size: 11px; padding: 4px 10px; border-radius: 6px;
+      border: none; background: var(--accent); color: #fff;
+      cursor: pointer; display: none;
+    }
+    .save-exp-btn:hover { background: var(--accent-h); }
+    .pane-exp-body {
+      flex: 1; overflow-y: auto; min-height: 0;
+      padding: 24px 28px 40px;
+    }
+    .pane-exp-body::-webkit-scrollbar { width: 5px; }
+    .pane-exp-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    /* ── Explanation VIEW mode ─────────────────────── */
+    /* ── Meta grid ─────────────────────────────────────────── */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .meta-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .meta-card.full { grid-column: 1 / -1; }
+    .meta-label {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text3); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag {
+      font-size: 11px; padding: 3px 10px; border-radius: 999px;
+      border: 1px solid var(--border2); background: var(--bg);
+      color: var(--text2); font-weight: 500;
+    }
+    .tag.algo    { background: rgba(99,102,241,0.1);  color: var(--accent-tx); border-color: rgba(99,102,241,0.25); }
+    .tag.approach{ background: rgba(15,118,110,0.08); color: #0f766e;          border-color: rgba(15,118,110,0.2); }
+    .tag.prereq  { background: rgba(245,158,11,0.1);  color: #92400e;          border-color: rgba(245,158,11,0.25); }
+    .tag.company { background: rgba(16,185,129,0.1);  color: #065f46;          border-color: rgba(16,185,129,0.25); }
+
+    /* ── Complexity row inside meta grid ────────────────────── */
+    .complexity-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-bottom: 20px;
+    }
+    .complexity-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .complexity-card .lbl {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3);
+    }
+    .complexity-card .val {
+      font-size: 18px; font-weight: 700; color: var(--text);
+      font-family: ui-monospace, monospace;
+    }
+    .exp-section-title {
+      font-size: 13px; font-weight: 700; color: var(--text);
+      margin: 26px 0 12px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .exp-section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .exp-p {
+      font-size: 13.5px; color: var(--text2);
+      line-height: 1.8; margin-bottom: 10px;
+    }
+    /* Numbered step paragraphs */
+    .exp-steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+    .exp-step {
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .exp-step-num {
+      width: 22px; height: 22px; flex-shrink: 0;
+      background: var(--accent-lt); color: var(--accent-tx);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; margin-top: 2px;
+    }
+    .exp-step-text { font-size: 13.5px; color: var(--text2); line-height: 1.75; }
+    /* Complexity callout at bottom */
+    .complexity-callout {
+      margin-top: 28px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .complexity-callout-title {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text3); padding: 10px 16px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+    }
+    .complexity-callout-body {
+      display: grid; grid-template-columns: 1fr 1fr;
+    }
+    .complexity-half {
+      padding: 16px 18px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .complexity-half:first-child {
+      border-right: 1px solid var(--border);
+    }
+    .complexity-half .lbl {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3);
+    }
+    .complexity-half .val {
+      font-size: 22px; font-weight: 700; color: var(--text);
+      font-family: ui-monospace, monospace; letter-spacing: -0.02em;
+    }
+    .complexity-half .explain {
+      font-size: 12px; color: var(--text3); margin-top: 2px; line-height: 1.5;
+    }
+    /* Quote block */
+    .exp-quote {
+      border-left: 3px solid var(--accent);
+      background: var(--accent-lt);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 13px; color: var(--accent-tx);
+      font-style: italic; line-height: 1.65;
+    }
+    .exp-empty { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 13px; }
+    .exp-empty-icon { font-size: 32px; margin-bottom: 12px; }
+
+    /* ── Explanation EDIT mode ─────────────────────── */
+    .edit-form { display: none; flex-direction: column; gap: 16px; }
+    .edit-form.visible { display: flex; }
+    .field-group { display: flex; flex-direction: column; gap: 5px; }
+    .field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); }
+    .field-input, .field-textarea, .field-select {
+      font-size: 13px; padding: 8px 10px;
+      border: 1px solid var(--border2); border-radius: 7px;
+      background: var(--bg2); color: var(--text);
+      font-family: inherit; outline: none;
+      transition: border-color 0.15s;
+    }
+    .field-input:focus, .field-textarea:focus { border-color: var(--accent); }
+    .field-textarea { resize: vertical; min-height: 90px; line-height: 1.65; }
+    .field-hint { font-size: 11px; color: var(--text3); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .view-mode { display: block; }
+    .edit-mode { display: none; }
+
+    /* ── Solution name modal ───────────────────────── */
+    .mini-modal-bd {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200;
+    }
+    .mini-modal {
+      background: var(--bg); border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 20px; width: 340px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+    }
+    .mini-modal-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+    .mini-modal input {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid var(--border2); border-radius: 7px;
+      font-size: 13px; background: var(--bg2); color: var(--text);
+      outline: none; margin-bottom: 12px;
+    }
+    .mini-modal input:focus { border-color: var(--accent); }
+    .mini-modal-btns { display: flex; justify-content: flex-end; gap: 8px; }
+    .mini-btn { font-size: 12px; padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border2); background: var(--bg2); color: var(--text); }
+    .mini-btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+    .mini-btn.primary:hover { background: var(--accent-h); }
+    .mini-btn.danger { color: var(--hard); border-color: rgba(220,38,38,0.2); }
+    .mini-btn.danger:hover { background: rgba(220,38,38,0.06); }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <button class="back-btn" id="back-btn">← Back</button>
+  <div class="topbar-title" id="topbar-title">Loading…</div>
+  <div class="topbar-right">
+    <span class="diff-pill" id="diff-pill"></span>
+    <a class="lc-link" id="lc-link" target="_blank" rel="noreferrer">Open Problem ↗</a>
+  </div>
+</div>
+
+<!-- SOLUTION TABS -->
+<div class="sol-tab-bar" id="sol-tab-bar">
+  <!-- tabs rendered by JS -->
+  <div class="sol-tab-add" id="add-sol-tab">+ Add Solution</div>
+  <div class="sol-tab-add" id="import-json-tab" style="color:var(--text-secondary);">⬇ Import JSON</div>
+</div>
+
+<!-- SPLIT PANE -->
+<div class="split" id="split">
+
+  <!-- LEFT: Code -->
+  <div class="pane-code" id="pane-code">
+    <div class="pane-code-hdr">
+      <div class="lang-tabs" id="lang-tabs"></div>
+      <button class="copy-btn" id="code-edit-btn" style="color:#a6e3a1;border-color:rgba(166,227,161,0.3);">✏ Edit</button>
+      <button class="copy-btn" id="code-save-btn" style="display:none;color:#a6e3a1;border-color:rgba(166,227,161,0.3);">✓ Save</button>
+      <button class="copy-btn" id="copy-btn">Copy</button>
+    </div>
+    <div class="cm-wrap" id="cm-wrap"></div>
+  </div>
+
+  <!-- Resize handle -->
+  <div class="resize-handle" id="resize-handle"></div>
+
+  <!-- RIGHT: Explanation -->
+  <div class="pane-exp" id="pane-exp">
+    <div class="pane-exp-hdr">
+      <div class="pane-exp-hdr-title">Explanation</div>
+      <button class="edit-toggle" id="edit-toggle">✏️ Edit</button>
+      <button class="save-exp-btn" id="save-exp-btn">Save</button>
+    </div>
+    <div class="pane-exp-body" id="pane-exp-body">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+
+</div>
+
+<script src="data/content.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────
+//  SOLUTION PAGE
+// ─────────────────────────────────────────────────────────────
+
+// Parse ?q= from URL
+const params   = new URLSearchParams(location.search);
+const Q_KEY    = params.get('q') || '';          // e.g. "https://leetcode.com/two-sum"
+const Q_NAME   = params.get('name') || 'Question';
+const Q_DIFF   = (params.get('diff') || '').toLowerCase();
+const Q_URL    = params.get('url') || '#';
+
+const LANGS = ['C++', 'Java', 'Python', 'JavaScript', 'Go', 'Rust'];
+function cmMode(lang) {
+  return { 'C++':'text/x-c++src','Java':'text/x-java','Python':'python',
+           'JavaScript':'javascript','Go':'text/x-go','Rust':'rust' }[lang] || 'text/plain';
+}
+function solCodeKey(solId, lang) { return `hi:sol:${Q_KEY}:${solId}:${lang}`; }
+function solMetaKey(solId)       { return `hi:solmeta:${Q_KEY}:${solId}`; }
+function solListKey()            { return `hi:sollist:${Q_KEY}`; }
+function expKey(solId)           { return `hi:exp:${Q_KEY}:${solId}`; }
+
+// ── Bootstrap topbar ──────────────────────────────────────────
+document.getElementById('topbar-title').textContent = Q_NAME;
+document.title = `${Q_NAME} — Solution`;
+const diffPill = document.getElementById('diff-pill');
+diffPill.textContent = Q_DIFF.charAt(0).toUpperCase() + Q_DIFF.slice(1);
+diffPill.className = `diff-pill ${Q_DIFF}`;
+const lcLink = document.getElementById('lc-link');
+lcLink.href = Q_URL !== '#' ? Q_URL : '#';
+if (Q_URL === '#') lcLink.style.display = 'none';
+
+document.getElementById('back-btn').onclick = () => history.back();
+
+// ── Solution list (stored as JSON array of {id, name}) ────────
+function getSolList() {
+  try { return JSON.parse(localStorage.getItem(solListKey()) || '[]'); } catch { return []; }
+}
+function saveSolList(list) {
+  try { localStorage.setItem(solListKey(), JSON.stringify(list)); } catch {}
+}
+function newId() { return 'sol_' + Date.now(); }
+
+// Also check legacy single-solution storage (from index.html)
+function getLegacyLangs() {
+  return LANGS.filter(l => {
+    try { return !!localStorage.getItem(`hi:sol:${Q_KEY}:${l}`); } catch { return false; }
+  });
+}
+
+// On first load, if legacy solutions exist but no sol list yet, migrate them
+function migrateLegacy() {
+  const list = getSolList();
+  if (list.length > 0) return;
+  const legacyLangs = getLegacyLangs();
+  if (!legacyLangs.length) return;
+  const id = newId();
+  saveSolList([{ id, name: 'My Solution' }]);
+  // copy each lang
+  legacyLangs.forEach(l => {
+    try {
+      const code = localStorage.getItem(`hi:sol:${Q_KEY}:${l}`);
+      if (code) localStorage.setItem(solCodeKey(id, l), code);
+    } catch {}
+  });
+}
+migrateLegacy();
+
+// ── State ────────────────────────────────────────────────────
+let activeSolId   = null;
+let activeLang    = 'C++';
+let cmEditor      = null;  // CodeMirror instance
+let editMode      = false;
+
+// ── Get saved langs for a solution ───────────────────────────
+function getSolLangs(solId) {
+  return LANGS.filter(l => {
+    try { return !!localStorage.getItem(solCodeKey(solId, l)); } catch { return false; }
+  });
+}
+
+// ── Render solution tabs ──────────────────────────────────────
+function renderTabs() {
+  const bar = document.getElementById('sol-tab-bar');
+  const addBtn = document.getElementById('add-sol-tab');
+  // remove old tabs (not the add button)
+  bar.querySelectorAll('.sol-tab').forEach(t => t.remove());
+
+  const list = getSolList();
+  list.forEach(sol => {
+    const tab = document.createElement('div');
+    tab.className = 'sol-tab' + (sol.id === activeSolId ? ' active' : '');
+    tab.textContent = sol.name;
+    tab.dataset.id = sol.id;
+    tab.addEventListener('click', () => {
+      activeSolId = sol.id;
+      activeLang = getSolLangs(sol.id)[0] || 'C++';
+      editMode = false;
+      renderTabs();
+      renderCode();
+      renderExp();
+    });
+    bar.insertBefore(tab, addBtn);
+  });
+
+  if (list.length === 0) {
+    // show empty state in code pane
+    renderCodeEmpty();
+    renderExpEmpty();
+  }
+}
+
+// ── Render code pane ─────────────────────────────────────────
+function renderCode() {
+  if (!activeSolId) { renderCodeEmpty(); return; }
+  const langs = getSolLangs(activeSolId);
+
+  // lang tabs
+  const langTabsEl = document.getElementById('lang-tabs');
+  langTabsEl.innerHTML = '';
+  (langs.length ? langs : [activeLang]).forEach(l => {
+    const t = document.createElement('div');
+    t.className = 'lang-tab' + (l === activeLang ? ' active' : '');
+    t.textContent = l;
+    t.addEventListener('click', () => {
+      activeLang = l;
+      renderCode();
+    });
+    langTabsEl.appendChild(t);
+  });
+
+  // code
+  const code = langs.length
+    ? (localStorage.getItem(solCodeKey(activeSolId, activeLang)) || localStorage.getItem(solCodeKey(activeSolId, langs[0])) || '')
+    : '';
+
+  if (!cmEditor) {
+    const wrap = document.getElementById('cm-wrap');
+    wrap.innerHTML = '';
+    cmEditor = CodeMirror(wrap, {
+      value: code,
+      mode: cmMode(activeLang),
+      theme: 'dracula',
+      lineNumbers: true,
+      readOnly: true,
+      cursorBlinkRate: -1,
+      autoRefresh: true,
+      lineWrapping: false,
+    });
+    cmEditor.setSize('100%', '100%');
+  } else {
+    cmEditor.setValue(code);
+    cmEditor.setOption('mode', cmMode(activeLang));
+    cmEditor.refresh();
+  }
+  // reset edit state when switching
+  setCodeEditing(false);
+}
+
+// ── Code pane edit/save wiring ────────────────────────────────
+let codeEditing = false;
+
+function setCodeEditing(on) {
+  codeEditing = on;
+  if (!cmEditor) return;
+  cmEditor.setOption('readOnly', on ? false : true);
+  cmEditor.setOption('cursorBlinkRate', on ? 530 : -1);
+  if (on) {
+    cmEditor.focus();
+    cmEditor.setCursor(cmEditor.lineCount(), 0);
+  }
+  const editBtn = document.getElementById('code-edit-btn');
+  const saveBtn = document.getElementById('code-save-btn');
+  if (editBtn) editBtn.style.display = on ? 'none' : '';
+  if (saveBtn) saveBtn.style.display = on ? '' : 'none';
+}
+
+document.getElementById('code-edit-btn').onclick = () => setCodeEditing(true);
+document.getElementById('code-save-btn').onclick = () => {
+  if (!activeSolId || !cmEditor) return;
+  const code = cmEditor.getValue().trim();
+  if (code) {
+    localStorage.setItem(solCodeKey(activeSolId, activeLang), code);
+    try { localStorage.setItem(`hi:sol:${Q_KEY}:${activeLang}`, code); } catch {}
+  }
+  setCodeEditing(false);
+};
+
+function renderCodeEmpty() {
+  const wrap = document.getElementById('cm-wrap');
+  if (cmEditor) { cmEditor = null; }
+  wrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6c7086;font-size:13px;flex-direction:column;gap:8px;"><div style="font-size:28px;">🧩</div><div>No solution added yet.</div><div style="font-size:12px;opacity:0.7;">Add a solution using the tabs above.</div></div>`;
+}
+
+// ── Explanation data ──────────────────────────────────────────
+function getExp(solId) {
+  try { return JSON.parse(localStorage.getItem(expKey(solId)) || 'null'); } catch { return null; }
+}
+function saveExp(solId, data) {
+  try { localStorage.setItem(expKey(solId), JSON.stringify(data)); } catch {}
+}
+
+// ── Render explanation pane ───────────────────────────────────
+function renderExp() {
+  const body = document.getElementById('pane-exp-body');
+  const editToggle = document.getElementById('edit-toggle');
+  const saveBtn = document.getElementById('save-exp-btn');
+
+  if (!activeSolId) { renderExpEmpty(); return; }
+
+  if (editMode) {
+    editToggle.textContent = '👁 View';
+    editToggle.classList.add('active');
+    saveBtn.style.display = 'inline-block';
+    renderExpEdit();
+  } else {
+    editToggle.textContent = '✏️ Edit';
+    editToggle.classList.remove('active');
+    saveBtn.style.display = 'none';
+    renderExpView();
+  }
+}
+
+function renderExpEmpty() {
+  const body = document.getElementById('pane-exp-body');
+  body.innerHTML = `<div class="exp-empty"><div class="exp-empty-icon">📝</div><div>No solution yet.</div><div style="margin-top:6px;font-size:12px;">Click "+ Add Solution" above to get started.</div></div>`;
+}
+
+function renderExpView() {
+  const body = document.getElementById('pane-exp-body');
+  const data = getExp(activeSolId);
+
+  if (!data || (!data.howToThink && !data.explanation && !data.algorithms?.length)) {
+    body.innerHTML = `<div class="exp-empty"><div class="exp-empty-icon">✏️</div><div>No explanation yet.</div><div style="margin-top:6px;font-size:12px;">Click "Edit" to write your explanation.</div></div>`;
+    return;
+  }
+
+  let html = '';
+
+  // ── Meta cards grid (top) ───────────────────────────────────
+  const hasAlgo    = data.algorithms?.length;
+  const hasPrereq  = data.prerequisites?.length;
+  const hasCompany = data.companies?.length;
+  const hasApproach= data.approaches?.length;
+
+  if (hasAlgo || hasPrereq || hasCompany || hasApproach) {
+    html += `<div class="meta-grid">`;
+    if (hasAlgo) html += `
+      <div class="meta-card">
+        <div class="meta-label">🧩 Algorithms</div>
+        <div class="tag-row">${data.algorithms.map(t=>`<span class="tag algo">${t}</span>`).join('')}</div>
+      </div>`;
+    if (hasApproach) html += `
+      <div class="meta-card">
+        <div class="meta-label">🎯 Approach</div>
+        <div class="tag-row">${data.approaches.map(t=>`<span class="tag approach">${t}</span>`).join('')}</div>
+      </div>`;
+    if (hasPrereq) html += `
+      <div class="meta-card">
+        <div class="meta-label">📚 Prerequisites</div>
+        <div class="tag-row">${data.prerequisites.map(t=>`<span class="tag prereq">${t}</span>`).join('')}</div>
+      </div>`;
+    if (hasCompany) html += `
+      <div class="meta-card full">
+        <div class="meta-label">🏢 Asked at</div>
+        <div class="tag-row">${data.companies.map(t=>`<span class="tag company">${t}</span>`).join('')}</div>
+      </div>`;
+    html += `</div>`;
+  }
+
+  // ── How to think ────────────────────────────────────────────
+  if (data.howToThink) {
+    html += `<div class="exp-section-title">🧠 How to think about it</div>`;
+    const paras = data.howToThink.split('\n').filter(Boolean);
+    // First paragraph as a pull quote, rest as normal text
+    if (paras.length > 0) {
+      html += `<div class="exp-quote">${paras[0]}</div>`;
+      html += paras.slice(1).map(p => `<p class="exp-p">${p}</p>`).join('');
+    }
+  }
+
+  // ── Step-by-step explanation ────────────────────────────────
+  if (data.explanation) {
+    html += `<div class="exp-section-title">📖 Step-by-step</div>`;
+    const steps = data.explanation.split('\n').filter(Boolean);
+    html += `<div class="exp-steps">`;
+    steps.forEach((step, i) => {
+      html += `<div class="exp-step">
+        <div class="exp-step-num">${i + 1}</div>
+        <div class="exp-step-text">${step}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // ── Complexity callout (at bottom, styled as a summary card) ─
+  if (data.timeComplexity || data.spaceComplexity) {
+    // derive explanation text from the values
+    const timeExp = data.timeComplexity === 'O(n)' ? 'Single pass through the array'
+                  : data.timeComplexity === 'O(n²)' ? 'Nested loop over all pairs'
+                  : data.timeComplexity === 'O(n log n)' ? 'Sorting dominates'
+                  : 'See explanation above';
+    const spaceExp = data.spaceComplexity === 'O(1)' ? 'No extra data structures used'
+                   : data.spaceComplexity === 'O(n)' ? 'Hash map stores up to n entries'
+                   : 'See explanation above';
+    html += `
+    <div class="complexity-callout">
+      <div class="complexity-callout-title">Complexity Analysis</div>
+      <div class="complexity-callout-body">
+        <div class="complexity-half">
+          <div class="lbl">Time</div>
+          <div class="val">${data.timeComplexity || '—'}</div>
+          <div class="explain">${timeExp}</div>
+        </div>
+        <div class="complexity-half">
+          <div class="lbl">Space</div>
+          <div class="val">${data.spaceComplexity || '—'}</div>
+          <div class="explain">${spaceExp}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  body.innerHTML = html;
+}
+
+function renderExpEdit() {
+  const body = document.getElementById('pane-exp-body');
+  const data = getExp(activeSolId) || {};
+
+  body.innerHTML = `
+    <div class="edit-form visible" id="edit-form">
+
+      <div class="field-group">
+        <div class="field-label">Algorithms used</div>
+        <input class="field-input" id="f-algorithms" placeholder="e.g. Two Pointers, Sliding Window, BFS" value="${escHtml(data.algorithms?.join(', ') || '')}">
+        <div class="field-hint">Comma-separated</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Approach tags</div>
+        <input class="field-input" id="f-approaches" placeholder="e.g. Brute Force, Optimal, Greedy" value="${escHtml(data.approaches?.join(', ') || '')}">
+        <div class="field-hint">Comma-separated</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Prerequisites</div>
+        <input class="field-input" id="f-prerequisites" placeholder="e.g. Hash Maps, Recursion, Graph traversal" value="${escHtml(data.prerequisites?.join(', ') || '')}">
+        <div class="field-hint">Comma-separated</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Companies asked</div>
+        <input class="field-input" id="f-companies" placeholder="e.g. Google, Meta, Amazon" value="${escHtml(data.companies?.join(', ') || '')}">
+        <div class="field-hint">Comma-separated</div>
+      </div>
+
+      <div class="two-col">
+        <div class="field-group">
+          <div class="field-label">Time complexity</div>
+          <input class="field-input" id="f-time" placeholder="e.g. O(n log n)" value="${escHtml(data.timeComplexity || '')}">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Space complexity</div>
+          <input class="field-input" id="f-space" placeholder="e.g. O(n)" value="${escHtml(data.spaceComplexity || '')}">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">🧠 How to think about it</div>
+        <textarea class="field-textarea" id="f-howToThink" placeholder="Walk through your intuition. How do you arrive at the solution? What pattern did you recognize?">${escHtml(data.howToThink || '')}</textarea>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">📖 Explanation</div>
+        <textarea class="field-textarea" id="f-explanation" style="min-height:140px" placeholder="Step-by-step explanation of your approach. Use newlines for paragraphs.">${escHtml(data.explanation || '')}</textarea>
+      </div>
+
+    </div>
+  `;
+}
+
+function collectEditForm() {
+  const csv = id => (document.getElementById(id)?.value || '').split(',').map(s=>s.trim()).filter(Boolean);
+  const txt = id => document.getElementById(id)?.value || '';
+  return {
+    algorithms:     csv('f-algorithms'),
+    approaches:     csv('f-approaches'),
+    prerequisites:  csv('f-prerequisites'),
+    companies:      csv('f-companies'),
+    timeComplexity: txt('f-time'),
+    spaceComplexity:txt('f-space'),
+    howToThink:     txt('f-howToThink'),
+    explanation:    txt('f-explanation'),
+  };
+}
+
+// ── Edit toggle ───────────────────────────────────────────────
+document.getElementById('edit-toggle').onclick = () => {
+  if (!activeSolId) return;
+  editMode = !editMode;
+  renderExp();
+};
+
+document.getElementById('save-exp-btn').onclick = () => {
+  if (!activeSolId) return;
+  const data = collectEditForm();
+  saveExp(activeSolId, data);
+  editMode = false;
+  renderExp();
+};
+
+// ── Copy button ───────────────────────────────────────────────
+document.getElementById('copy-btn').onclick = () => {
+  if (!activeSolId) return;
+  const code = localStorage.getItem(solCodeKey(activeSolId, activeLang)) || '';
+  navigator.clipboard?.writeText(code).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+};
+
+// ── Add solution tab ──────────────────────────────────────────
+document.getElementById('add-sol-tab').onclick = () => openAddSolModal();
+document.getElementById('import-json-tab').onclick = () => openImportJsonModal();
+
+// ── Import JSON modal ─────────────────────────────────────────────
+function openImportJsonModal() {
+
+  // ── Schema prompt you can paste into an AI ────────────────────
+  const AI_PROMPT = `Generate a JSON object for importing into my coding interview tracker.
+
+Format:
+{
+  "Solution Name": {
+    "code": {
+      "C++": "// your code — use actual newlines, they will be escaped to \\n in JSON",
+      "Java": "// optional",
+      "Python": "# optional"
+    },
+    "explanation": {
+      "algorithms": ["e.g. Hash Map", "Two Pointers"],
+      "approaches": ["e.g. Brute Force", "Optimal"],
+      "prerequisites": ["e.g. Arrays", "Recursion"],
+      "companies": ["Google", "Meta"],
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "howToThink": "How you reason about the problem from scratch.",
+      "explanation": "Step-by-step walkthrough of the solution."
+    }
+  }
+}
+
+Rules:
+- Top-level keys are solution names e.g. "Brute Force", "Optimal", "DP"
+- code: object where keys are language names: C++, Java, Python, JavaScript, Go, Rust
+- explanation: all fields optional but include as many as possible
+- Output ONLY valid JSON, no markdown fences, no comments`;
+
+  // ── Minimal schema reference ───────────────────────────────────
+  const SCHEMA_REF = `{
+  "<solution name>": {
+    "code": {
+      "C++": "<code string>",
+      "Java": "<code string>",
+      "Python": "<code string>",
+      "JavaScript": "<code string>",
+      "Go": "<code string>",
+      "Rust": "<code string>"
+    },
+    "explanation": {
+      "algorithms":      ["Hash Map", "..."],
+      "approaches":      ["Brute Force", "Optimal", "..."],
+      "prerequisites":   ["Arrays", "Recursion", "..."],
+      "companies":       ["Google", "Meta", "..."],
+      "timeComplexity":  "O(n)",
+      "spaceComplexity": "O(1)",
+      "howToThink":      "How you reason from scratch...",
+      "explanation":     "Step-by-step walkthrough..."
+    }
+  },
+  "<another solution>": { ... }
+}`;
+
+  const bd = document.createElement('div');
+  bd.className = 'mini-modal-bd';
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--bg);border-radius:12px;border:1px solid var(--border);padding:20px;width:min(740px,95vw);max-height:92vh;display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 40px rgba(0,0,0,0.15);overflow:hidden;';
+
+  // ── Title ─────────────────────────────────────────────────────
+  const titleEl = document.createElement('div');
+  titleEl.style.cssText = 'font-size:14px;font-weight:600;color:var(--text);';
+  titleEl.textContent = 'Import solutions from JSON';
+  box.appendChild(titleEl);
+
+  // ── Schema section ────────────────────────────────────────────
+  const schemaWrap = document.createElement('div');
+  schemaWrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+
+  const schemaHdr = document.createElement('div');
+  schemaHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+
+  const schemaLabel = document.createElement('div');
+  schemaLabel.style.cssText = 'font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);';
+  schemaLabel.textContent = 'JSON Schema';
+  schemaHdr.appendChild(schemaLabel);
+
+  const copySchemaBtn = document.createElement('button');
+  copySchemaBtn.className = 'mini-btn';
+  copySchemaBtn.style.cssText = 'font-size:11px;padding:3px 10px;';
+  copySchemaBtn.textContent = 'Copy schema';
+  copySchemaBtn.onclick = () => {
+    navigator.clipboard?.writeText(SCHEMA_REF).then(() => {
+      copySchemaBtn.textContent = '✓ Copied';
+      setTimeout(() => copySchemaBtn.textContent = 'Copy schema', 1500);
+    });
+  };
+  schemaHdr.appendChild(copySchemaBtn);
+  schemaWrap.appendChild(schemaHdr);
+
+  const schemaPre = document.createElement('pre');
+  schemaPre.style.cssText = 'font-family:ui-monospace,monospace;font-size:11px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;overflow:auto;max-height:160px;color:var(--text2);white-space:pre;margin:0;line-height:1.55;';
+  schemaPre.textContent = SCHEMA_REF;
+  schemaWrap.appendChild(schemaPre);
+  box.appendChild(schemaWrap);
+
+  // ── AI prompt section ──────────────────────────────────────────
+  const promptWrap = document.createElement('div');
+  promptWrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+
+  const promptHdr = document.createElement('div');
+  promptHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+
+  const promptLabel = document.createElement('div');
+  promptLabel.style.cssText = 'font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);';
+  promptLabel.textContent = 'AI prompt — paste into ChatGPT / Claude';
+  promptHdr.appendChild(promptLabel);
+
+  const copyPromptBtn = document.createElement('button');
+  copyPromptBtn.className = 'mini-btn';
+  copyPromptBtn.style.cssText = 'font-size:11px;padding:3px 10px;';
+  copyPromptBtn.textContent = 'Copy prompt';
+  copyPromptBtn.onclick = () => {
+    navigator.clipboard?.writeText(AI_PROMPT).then(() => {
+      copyPromptBtn.textContent = '✓ Copied';
+      setTimeout(() => copyPromptBtn.textContent = 'Copy prompt', 1500);
+    });
+  };
+  promptHdr.appendChild(copyPromptBtn);
+  promptWrap.appendChild(promptHdr);
+
+  const promptNote = document.createElement('div');
+  promptNote.style.cssText = 'font-size:11.5px;color:var(--text3);line-height:1.6;';
+  promptNote.textContent = 'Copy this prompt → ask an AI to generate the JSON for your problem → paste the result below.';
+  promptWrap.appendChild(promptNote);
+  box.appendChild(promptWrap);
+
+  // ── Divider ───────────────────────────────────────────────────
+  const div = document.createElement('hr');
+  div.style.cssText = 'border:none;border-top:1px solid var(--border);margin:0;';
+  box.appendChild(div);
+
+  // ── Paste area ────────────────────────────────────────────────
+  const pasteLabel = document.createElement('div');
+  pasteLabel.style.cssText = 'font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);';
+  pasteLabel.textContent = 'Paste JSON here';
+  box.appendChild(pasteLabel);
+
+  const ta = document.createElement('textarea');
+  ta.style.cssText = 'flex:1;min-height:180px;font-family:ui-monospace,monospace;font-size:11.5px;padding:10px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--bg2);color:var(--text);resize:vertical;outline:none;line-height:1.6;';
+  ta.placeholder = '{ "Optimal": { "code": { "C++": "..." }, "explanation": { ... } } }';
+  box.appendChild(ta);
+
+  const errEl = document.createElement('div');
+  errEl.style.cssText = 'font-size:11px;color:red;display:none;';
+  box.appendChild(errEl);
+
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'mini-btn'; cancelBtn.textContent = 'Cancel';
+  const importBtn = document.createElement('button');
+  importBtn.className = 'mini-btn primary'; importBtn.textContent = 'Import';
+  btns.appendChild(cancelBtn); btns.appendChild(importBtn);
+  box.appendChild(btns);
+
+  bd.appendChild(box);
+  document.body.appendChild(bd);
+  ta.focus();
+
+  cancelBtn.onclick = () => document.body.removeChild(bd);
+  bd.onclick = (e) => { if (e.target === bd) document.body.removeChild(bd); };
+
+  importBtn.onclick = () => {
+    errEl.style.display = 'none';
+    let obj;
+    try {
+      obj = JSON.parse(ta.value.trim());
+      if (typeof obj !== 'object' || Array.isArray(obj)) throw new Error('Top level must be a JSON object {}');
+    } catch (err) {
+      errEl.textContent = '⚠ JSON parse error: ' + err.message;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const list = getSolList();
+    let codeCount = 0, expCount = 0;
+
+    Object.entries(obj).forEach(([solName, val]) => {
+      if (typeof val !== 'object' || !val) return;
+      let sol = list.find(s => s.name === solName);
+      if (!sol) {
+        sol = { id: 'sol_' + Date.now() + '_' + Math.random().toString(36).slice(2), name: solName };
+        list.push(sol);
+      }
+      const codeMap = (val.code && typeof val.code === 'object') ? val.code : val;
+      LANGS.forEach(lang => {
+        const code = codeMap[lang];
+        if (code && typeof code === 'string' && code.trim()) {
+          localStorage.setItem(solCodeKey(sol.id, lang), code.trim());
+          try { localStorage.setItem('hi:sol:' + Q_KEY + ':' + lang, code.trim()); } catch {}
+          codeCount++;
+        }
+      });
+      if (val.explanation && typeof val.explanation === 'object') {
+        const exp = val.explanation;
+        saveExp(sol.id, {
+          algorithms:      Array.isArray(exp.algorithms)    ? exp.algorithms    : [],
+          approaches:      Array.isArray(exp.approaches)    ? exp.approaches    : [],
+          prerequisites:   Array.isArray(exp.prerequisites) ? exp.prerequisites : [],
+          companies:       Array.isArray(exp.companies)     ? exp.companies     : [],
+          timeComplexity:  exp.timeComplexity  || '',
+          spaceComplexity: exp.spaceComplexity || '',
+          howToThink:      exp.howToThink      || '',
+          explanation:     exp.explanation     || '',
+        });
+        expCount++;
+      }
+    });
+
+    saveSolList(list);
+    document.body.removeChild(bd);
+    activeSolId = list[0]?.id || null;
+    activeLang = activeSolId ? (getSolLangs(activeSolId)[0] || 'C++') : 'C++';
+    boot();
+    alert('Imported ' + Object.keys(obj).length + ' solution(s): ' + codeCount + ' code snippet(s), ' + expCount + ' explanation(s).');
+  };
+}
+
+
+function openAddSolModal(existingId) {
+  const list = getSolList();
+  const existing = existingId ? list.find(s => s.id === existingId) : null;
+
+  const bd = document.createElement('div');
+  bd.className = 'mini-modal-bd';
+  const box = document.createElement('div');
+  box.className = 'mini-modal';
+
+  box.innerHTML = `
+    <div class="mini-modal-title">${existing ? 'Rename solution' : 'Name this solution'}</div>
+    <input id="sol-name-input" placeholder="e.g. Brute Force / Optimal / DP" value="${existing?.name || ''}">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:14px;">Then add your code using the language tabs in the code pane.</div>
+    <div class="mini-modal-btns">
+      ${existing ? `<button class="mini-btn danger" id="del-sol-btn">Delete</button>` : ''}
+      <button class="mini-btn" id="cancel-sol-btn">Cancel</button>
+      <button class="mini-btn primary" id="confirm-sol-btn">${existing ? 'Rename' : 'Create'}</button>
+    </div>
+  `;
+
+  bd.appendChild(box);
+  document.body.appendChild(bd);
+  document.getElementById('sol-name-input').focus();
+  document.getElementById('sol-name-input').select();
+
+  document.getElementById('cancel-sol-btn').onclick = () => document.body.removeChild(bd);
+  bd.onclick = (e) => { if (e.target === bd) document.body.removeChild(bd); };
+
+  document.getElementById('confirm-sol-btn').onclick = () => {
+    const name = document.getElementById('sol-name-input').value.trim();
+    if (!name) return;
+    if (existing) {
+      existing.name = name;
+      saveSolList(list);
+    } else {
+      const id = newId();
+      list.push({ id, name });
+      saveSolList(list);
+      activeSolId = id;
+      activeLang = 'C++';
+      // open code editor modal for this new sol
+      document.body.removeChild(bd);
+      renderTabs();
+      renderCode();
+      renderExp();
+      openCodeEditorModal(id);
+      return;
+    }
+    document.body.removeChild(bd);
+    renderTabs();
+  };
+
+  const delBtn = document.getElementById('del-sol-btn');
+  if (delBtn) {
+    delBtn.onclick = () => {
+      if (!confirm(`Delete solution "${existing.name}"?`)) return;
+      const newList = list.filter(s => s.id !== existingId);
+      saveSolList(newList);
+      if (activeSolId === existingId) {
+        activeSolId = newList[0]?.id || null;
+        activeLang = activeSolId ? (getSolLangs(activeSolId)[0] || 'C++') : 'C++';
+      }
+      document.body.removeChild(bd);
+      renderTabs();
+      renderCode();
+      renderExp();
+    };
+  }
+}
+
+function openCodeEditorModal(solId) {
+  const bd = document.createElement('div');
+  bd.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px;';
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#1e1e2e;border-radius:12px;width:min(900px,100%);height:min(580px,90vh);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,0.08);box-shadow:0 28px 70px rgba(0,0,0,0.55);';
+
+  // header
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'height:44px;background:#181825;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;';
+  hdr.innerHTML = `<span style="font-size:13px;font-weight:600;color:#cdd6f4;flex:1;">Add code</span>`;
+
+  const langSel = document.createElement('select');
+  langSel.style.cssText = 'padding:5px 8px;border-radius:7px;border:1px solid rgba(255,255,255,0.12);background:#313244;color:#cdd6f4;font-size:12px;outline:none;cursor:pointer;';
+  LANGS.forEach(l => {
+    const o = document.createElement('option'); o.value = l; o.textContent = l;
+    langSel.appendChild(o);
+  });
+
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save';
+  saveBtn.style.cssText = 'font-size:11px;padding:5px 12px;border-radius:7px;border:none;background:var(--accent);color:#fff;cursor:pointer;';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = 'font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid rgba(255,255,255,0.12);background:#313244;color:#cdd6f4;cursor:pointer;';
+
+  hdr.appendChild(langSel); hdr.appendChild(saveBtn); hdr.appendChild(closeBtn);
+
+  const cmHost = document.createElement('div');
+  cmHost.style.cssText = 'flex:1;overflow:hidden;min-height:0;';
+
+  box.appendChild(hdr); box.appendChild(cmHost);
+  bd.appendChild(box); document.body.appendChild(bd);
+
+  const editor = CodeMirror(cmHost, {
+    value: localStorage.getItem(solCodeKey(solId, langSel.value)) || '',
+    mode: cmMode(langSel.value),
+    theme: 'dracula',
+    lineNumbers: true,
+    autoRefresh: true,
+    extraKeys: { 'Tab': cm => cm.execCommand('insertSoftTab') }
+  });
+  editor.setSize('100%', '100%');
+  editor.focus();
+
+  langSel.onchange = () => {
+    editor.setValue(localStorage.getItem(solCodeKey(solId, langSel.value)) || '');
+    editor.setOption('mode', cmMode(langSel.value));
+    editor.focus();
+  };
+  closeBtn.onclick = () => { document.body.removeChild(bd); renderCode(); renderExp(); };
+  bd.onclick = (e) => { if (e.target === bd) { document.body.removeChild(bd); renderCode(); renderExp(); } };
+  saveBtn.onclick = () => {
+    const code = editor.getValue().trim();
+    if (!code) return;
+    localStorage.setItem(solCodeKey(solId, langSel.value), code);
+    saveBtn.textContent = 'Saved ✓';
+    setTimeout(() => saveBtn.textContent = 'Save', 1200);
+    // also update legacy key so index.html's viewBtn stays in sync
+    try { localStorage.setItem(`hi:sol:${Q_KEY}:${langSel.value}`, code); } catch {}
+    renderCode();
+  };
+}
+
+// ── Resize handle ─────────────────────────────────────────────
+const handle = document.getElementById('resize-handle');
+const split   = document.getElementById('split');
+const paneCode= document.getElementById('pane-code');
+let dragging = false;
+
+handle.addEventListener('mousedown', e => {
+  dragging = true;
+  handle.classList.add('dragging');
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const rect = split.getBoundingClientRect();
+  const pct  = Math.min(80, Math.max(20, ((e.clientX - rect.left) / rect.width) * 100));
+  paneCode.style.width = pct + '%';
+  if (cmEditor) cmEditor.refresh();
+});
+document.addEventListener('mouseup', () => {
+  dragging = false;
+  handle.classList.remove('dragging');
+});
+
+// ── Helpers ───────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+
+// ── Seed from SEED_DATA in content.js ────────────────────────
+function applySeedData() {
+  const seeds = window.SEED_DATA || [];
+  const entry = seeds.find(s => s.key === Q_KEY);
+  if (!entry) return;
+
+  const seedFlag = `hi:seeded:${Q_KEY}`;
+  if (localStorage.getItem(seedFlag)) return; // already seeded, don't overwrite
+
+  // Build sol list
+  const solList = entry.solutions.map(s => ({ id: s.id, name: s.name }));
+  saveSolList(solList);
+
+  // Store code per lang
+  entry.solutions.forEach(sol => {
+    Object.entries(sol.langs || {}).forEach(([lang, code]) => {
+      localStorage.setItem(solCodeKey(sol.id, lang), code);
+      // also write legacy key so index.html viewBtn knows a solution exists
+      localStorage.setItem(`hi:sol:${Q_KEY}:${lang}`, code);
+    });
+    // Store explanation
+    if (sol.explanation) {
+      localStorage.setItem(expKey(sol.id), JSON.stringify(sol.explanation));
+    }
+  });
+
+  localStorage.setItem(seedFlag, '1');
+}
+
+// ── Boot ──────────────────────────────────────────────────────
+function boot() {
+  applySeedData();
+  const list = getSolList();
+  if (list.length > 0) {
+    activeSolId = list[0].id;
+    activeLang  = getSolLangs(activeSolId)[0] || 'C++';
+  }
+  renderTabs();
+  renderCode();
+  renderExp();
+}
+boot();
+</script>
+</body>
+</html>
