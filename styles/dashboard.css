@@ -1,0 +1,84 @@
+/* ── Progress dashboard (simple variant) ──────────── */
+.dash {
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-primary);
+  padding: 16px;
+  margin: 18px 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.dash-left { display: flex; flex-direction: column; gap: 4px; }
+.dash-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.dash-sub { font-size: 12px; color: var(--text-secondary); }
+.dash-metrics { display: flex; gap: 10px; flex-wrap: wrap; }
+.metric { border: 1px solid var(--border-light); background: var(--bg-secondary); border-radius: 10px; padding: 10px 12px; min-width: 140px; }
+.metric-k { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+.metric-v { font-size: 18px; font-weight: 800; color: var(--text-primary); margin-top: 2px; }
+.metric-s { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+/* ── Pie / donut SVG ───────────────────────────────── */
+.pie {
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
+}
+.pie-label { font-size: 12px; font-weight: 800; fill: var(--text-primary); }
+
+/* ── LeetCode-style progress card ─────────────────── */
+.lc {
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  background: var(--bg-primary);
+  padding: 18px;
+  margin: 18px 0 8px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+.lc-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.lc-ring {
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+}
+.lc-center-title { font-size: 18px; font-weight: 900; letter-spacing: -0.02em; }
+.lc-center-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.lc-right {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  justify-items: stretch;
+}
+.lc-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 2px 10px;
+}
+.lc-pct { font-size: 24px; font-weight: 900; letter-spacing: -0.02em; }
+.lc-solvedline { font-size: 12px; color: var(--text-secondary); }
+.lc-card {
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.lc-k { font-size: 13px; font-weight: 900; }
+.lc-v { font-size: 18px; font-weight: 900; color: var(--text-primary); }
+.lc-k.easy   { color: #065f46; }
+.lc-k.medium { color: #92400e; }
+.lc-k.hard   { color: #991b1b; }

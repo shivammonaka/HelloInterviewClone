@@ -1,0 +1,152 @@
+/* solution.html uses --bg-primary token names, aliased here for brevity */
+body {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Top bar ───────────────────────────────────────── */
+.topbar {
+  height: 52px; flex-shrink: 0;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-light);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text-secondary);
+  cursor: pointer; padding: 5px 10px;
+  border-radius: 7px; border: 1px solid var(--border-mid);
+  background: transparent;
+}
+.back-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.topbar-title {
+  font-size: 15px; font-weight: 600; color: var(--text-primary);
+  flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.diff-pill {
+  font-size: 11px; font-weight: 700; padding: 3px 10px;
+  border-radius: 999px; border: 1px solid;
+}
+.diff-pill.easy   { color: var(--easy-color);   border-color: rgba(5,150,105,0.3);  background: rgba(5,150,105,0.08);  }
+.diff-pill.medium { color: var(--medium-color); border-color: rgba(217,119,6,0.3);  background: rgba(217,119,6,0.08);  }
+.diff-pill.hard   { color: var(--hard-color);   border-color: rgba(220,38,38,0.3);  background: rgba(220,38,38,0.08);  }
+.lc-link {
+  font-size: 12px; color: var(--accent); text-decoration: none;
+  border: 1px solid rgba(99,102,241,0.3); border-radius: 6px;
+  padding: 4px 10px;
+}
+.lc-link:hover { background: var(--accent-light); }
+
+/* ── Solution tabs (brute → optimal) ──────────────── */
+.sol-tab-bar {
+  height: 40px; flex-shrink: 0;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-light);
+  display: flex; align-items: flex-end;
+  padding: 0 18px; gap: 4px;
+}
+.sol-tab {
+  font-size: 12px; font-weight: 500;
+  padding: 6px 14px 7px; border-radius: 6px 6px 0 0;
+  cursor: pointer; color: var(--text-secondary);
+  border: 1px solid transparent; border-bottom: none;
+  display: flex; align-items: center; gap: 6px;
+}
+.sol-tab:hover { color: var(--text-primary); background: var(--bg-secondary); }
+.sol-tab.active { color: var(--accent-text); background: var(--bg-primary); border-color: var(--border-light); border-bottom-color: var(--bg-primary); }
+.sol-tab-add {
+  font-size: 12px; color: var(--accent);
+  padding: 6px 10px; cursor: pointer; align-self: center;
+  border-radius: 6px; margin-left: 4px;
+}
+.sol-tab-add:hover { background: var(--accent-light); }
+
+/* ── Main split pane ───────────────────────────────── */
+.split {
+  flex: 1; display: flex; min-height: 0;
+}
+
+/* LEFT — code pane */
+.pane-code {
+  width: 50%; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  background: var(--code-bg);
+  border-right: 1px solid var(--code-border);
+  min-width: 0;
+}
+.pane-code-hdr {
+  height: 40px; flex-shrink: 0;
+  background: var(--code-hdr);
+  border-bottom: 1px solid var(--code-border);
+  display: flex; align-items: center;
+  padding: 0 14px; gap: 10px;
+}
+.lang-tabs { display: flex; gap: 2px; flex: 1; }
+.lang-tab {
+  font-size: 12px; padding: 4px 12px;
+  border-radius: 5px; cursor: pointer;
+  color: #6c7086;
+}
+.lang-tab:hover { color: #cdd6f4; background: rgba(255,255,255,0.05); }
+.lang-tab.active { color: #cdd6f4; background: rgba(255,255,255,0.1); }
+.copy-btn {
+  font-size: 11px; padding: 4px 10px;
+  border-radius: 5px; border: 1px solid rgba(255,255,255,0.1);
+  background: transparent; color: #6c7086; cursor: pointer;
+  margin-left: auto;
+}
+.copy-btn:hover { color: #cdd6f4; }
+.cm-wrap { flex: 1; overflow: hidden; min-height: 0; }
+.cm-wrap .CodeMirror {
+  height: 100%; font-size: 13.5px; line-height: 1.65;
+  font-family: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--code-bg);
+}
+
+/* ── Resize handle ─────────────────────────────────── */
+.resize-handle {
+  width: 5px; flex-shrink: 0; cursor: col-resize;
+  background: var(--code-border);
+  transition: background 0.15s;
+  z-index: 10;
+}
+.resize-handle:hover, .resize-handle.dragging { background: var(--accent); }
+
+/* RIGHT — explanation pane */
+.pane-exp {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-primary);
+}
+.pane-exp-hdr {
+  height: 40px; flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
+  display: flex; align-items: center;
+  padding: 0 18px; gap: 8px;
+}
+.pane-exp-hdr-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); flex: 1; }
+.edit-toggle {
+  font-size: 11px; padding: 4px 10px; border-radius: 6px;
+  border: 1px solid var(--border-mid); background: var(--bg-primary);
+  cursor: pointer; color: var(--text-secondary);
+}
+.edit-toggle:hover { background: var(--bg-tertiary); }
+.edit-toggle.active { background: var(--accent); color: #fff; border-color: transparent; }
+.save-exp-btn {
+  font-size: 11px; padding: 4px 10px; border-radius: 6px;
+  border: none; background: var(--accent); color: #fff;
+  cursor: pointer; display: none;
+}
+.save-exp-btn:hover { background: var(--accent-hover); }
+.pane-exp-body {
+  flex: 1; overflow-y: auto; min-height: 0;
+  padding: 24px 28px 40px;
+}
+.pane-exp-body::-webkit-scrollbar { width: 5px; }
+.pane-exp-body::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }

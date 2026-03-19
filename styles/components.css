@@ -1,0 +1,59 @@
+/* ── Buttons ───────────────────────────────────────── */
+.btn-primary {
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 6px;
+  padding: 7px 15px; font-size: 13px;
+  font-weight: 500; cursor: pointer;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+
+/* ── Difficulty pills ──────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.pill.easy   { background: rgba(16,185,129,0.12); color: #065f46; border-color: rgba(16,185,129,0.25); }
+.pill.medium { background: rgba(245,158,11,0.14);  color: #92400e; border-color: rgba(245,158,11,0.28); }
+.pill.hard   { background: rgba(239,68,68,0.12);   color: #991b1b; border-color: rgba(239,68,68,0.25); }
+
+/* ── Grid cards ────────────────────────────────────── */
+.grid-card-wrap {
+  border: 1px solid var(--border-light); border-radius: 10px;
+  padding: 20px; margin: 24px 0; background: var(--bg-primary);
+}
+.grid-card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+.grid-card-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid-card-item  { background: var(--bg-secondary); border-radius: 7px; padding: 14px; }
+.grid-card-item.clickable { cursor: pointer; transition: transform 0.08s ease, box-shadow 0.08s ease; }
+.grid-card-item.clickable:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+.grid-card-item-title { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.grid-card-item-body  { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+
+/* ── Accordion ─────────────────────────────────────── */
+.acc { border: 1px solid var(--border-light); border-radius: 10px; background: var(--bg-primary); }
+.acc-item + .acc-item { border-top: 1px solid var(--border-light); }
+.acc-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.acc-summary::-webkit-details-marker { display: none; }
+.acc-meta { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.acc-body { padding: 0 16px 14px; }
+.acc-chevron { color: var(--text-tertiary); font-size: 12px; }
+details[open] .acc-chevron { transform: rotate(180deg); }

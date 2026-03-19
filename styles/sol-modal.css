@@ -1,0 +1,30 @@
+/* ── Solution name / rename modal ──────────────────── */
+.mini-modal-bd {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+}
+.mini-modal {
+  background: var(--bg-primary); border-radius: 10px;
+  border: 1px solid var(--border-light);
+  padding: 20px; width: 340px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+}
+.mini-modal-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+.mini-modal input {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid var(--border-mid); border-radius: 7px;
+  font-size: 13px; background: var(--bg-secondary); color: var(--text-primary);
+  outline: none; margin-bottom: 12px;
+}
+.mini-modal input:focus { border-color: var(--accent); }
+.mini-modal-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.mini-btn {
+  font-size: 12px; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border-mid); background: var(--bg-secondary); color: var(--text-primary);
+}
+.mini-btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.mini-btn.primary:hover { background: var(--accent-hover); }
+.mini-btn.danger { color: var(--hard-color); border-color: rgba(220,38,38,0.2); }
+.mini-btn.danger:hover { background: rgba(220,38,38,0.06); }

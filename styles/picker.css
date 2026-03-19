@@ -1,0 +1,78 @@
+/* ── Company picker row ────────────────────────────── */
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: var(--bg-primary);
+  margin: 18px 0;
+  flex-wrap: wrap;
+}
+.picker label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.picker select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-mid);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  min-width: 220px;
+  outline: none;
+}
+.picker input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-mid);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  min-width: 260px;
+  outline: none;
+}
+.picker button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.picker button:hover { background: var(--accent-hover); }
+
+/* ── Search with autocomplete ──────────────────────── */
+.picker-search {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.suggest {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow: auto;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+  padding: 6px;
+  z-index: 50;
+  display: none;
+}
+.suggest.open { display: block; }
+.suggest-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.suggest-item:hover { background: var(--bg-secondary); }
+.suggest-muted { font-size: 12px; color: var(--text-secondary); }
