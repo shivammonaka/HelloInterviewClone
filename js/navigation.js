@@ -21,32 +21,9 @@ function renderPage(route, opts = {}) {
   } else {
     window.scrollTo(0, 0);
   }
-  setupScrollListeners();
-  // For long-reading pages (system design), we update progress immediately.
-  // For coding pages, avoid forcing a scroll update to prevent the bar from "flashing".
-  if (route.trackId === 'system-design' && typeof window.onscroll === 'function') {
-    window.onscroll();
+
+  if (route.trackId === 'system-design') {
+    setupSystemDesignScrollListeners();
+    if (typeof window.onscroll === 'function') window.onscroll();
   }
-}
-
-// ── Scroll: progress + TOC active ────────────────────────────
-function setupScrollListeners() {
-  window.onscroll = () => {
-    // Reading progress
-    const doc = document.documentElement;
-    const pct = Math.round((doc.scrollTop / (doc.scrollHeight - doc.clientHeight)) * 100) || 0;
-    const fill = document.getElementById('progress-fill');
-    const label = document.getElementById('progress-pct');
-    if (fill)  fill.style.width = pct + '%';
-    if (label) label.textContent = pct + '% read';
-
-    // TOC active item
-    const tocItems = document.querySelectorAll('.toc-item[data-target]');
-    let current = 0;
-    tocItems.forEach((item, i) => {
-      const target = document.getElementById(item.dataset.target);
-      if (target && target.getBoundingClientRect().top < 120) current = i;
-    });
-    tocItems.forEach((item, i) => item.classList.toggle('active', i === current));
-  };
 }
